@@ -7,6 +7,7 @@ import (
 	"github.com/micrypt/go-plivo/plivo"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 const (
@@ -90,11 +91,13 @@ func Create(c *gin.Context) {
 
 func Record(c *gin.Context) {
 	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
-	req := &plivo.CallRecordParams{TimeLimit: 1, FileFormat: "mp3", CallbackURL: os.Getenv("CALLBACK_URL"), CallbackMethod: "GET"}
+	req := &plivo.CallRecordParams{TimeLimit: 60, FileFormat: "mp3", CallbackURL: os.Getenv("CALLBACK_URL"), CallbackMethod: "GET"}
 	_, _ = client.Call.Record(c.Query("CallUUID"), req)
 }
 
 func Callback(c *gin.Context) {
-	fmt.Println("callback", c.Request.Body)
-	fmt.Println("callback", c.Request.URL)
+	str := strings.Split(strings.Split(c.Query("response"), "record_url%22%3A%22")[1], "%22%2C%22recording_duration")[0]
+	str = strings.Replace(str, "%3A", ":", -1)
+	str = strings.Replace(str, "%5C%2F", "/", -1)
+	fmt.Println("record_url", str)
 }
