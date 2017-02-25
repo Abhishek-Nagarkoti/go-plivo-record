@@ -73,7 +73,7 @@ func Get(c *gin.Context) {
 	}
 	defer file.Close()
 	data, err := ioutil.ReadAll(file)
-	fmt.Println("data", data)
+	// fmt.Println("data", data)
 	if err != nil {
 		fmt.Printf("error: %v", err)
 		return
@@ -90,7 +90,7 @@ func Create(c *gin.Context) {
 
 func Record(c *gin.Context) {
 	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
-	req := &plivo.CallRecordParams{TimeLimit: 1, FileFormat: ".mp3", CallbackURL: "http:localhost:8080/plivo/callback", CallbackMethod: "GET"}
+	req := &plivo.CallRecordParams{TimeLimit: 1, FileFormat: "mp3", CallbackURL: os.Getenv("CALLBACK_URL"), CallbackMethod: "GET"}
 	_, _ = client.Call.Record(c.Query("CallUUID"), req)
 }
 
