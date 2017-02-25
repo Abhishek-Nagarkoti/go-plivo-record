@@ -35,7 +35,8 @@ func main() {
 	})
 	// r.POST("/", upload)
 	r.GET("/", Get)
-	r.GET("/record", Get)
+	r.GET("/record", Record)
+	r.GET("/plivo/callback", Callback)
 	r.POST("/", Create)
 
 	// Start listening
@@ -88,5 +89,12 @@ func Create(c *gin.Context) {
 }
 
 func Record(c *gin.Context) {
-	fmt.Println("yoo", c.Request.URL)
+	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
+	req := &plivo.CallRecordParams{TimeLimit: 1, FileFormat: ".mp3", CallbackURL: "http:localhost:8080/plivo/callback", CallbackMethod: "GET"}
+	_, _ = client.Call.Record(c.Query("CallUUID"), req)
+}
+
+func Callback(c *gin.Context) {
+	fmt.Println("callback", c.Request.Body)
+	fmt.Println("callback", c.Request.URL)
 }
