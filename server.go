@@ -99,5 +99,8 @@ func Callback(c *gin.Context) {
 	str := strings.Split(strings.Split(c.Query("response"), "record_url%22%3A%22")[1], "%22%2C%22recording_duration")[0]
 	str = strings.Replace(str, "%3A", ":", -1)
 	str = strings.Replace(str, "%5C%2F", "/", -1)
+	//Sometimes just use this instead of above three lines
+	// str := strings.Split(strings.Split(c.Query("response"), "record_url\":\"")[1], "\",\"recording_duration")[0]
+	// str = strings.Replace(str, "\\", "", -1)
 	fmt.Println("record_url", str)
 }
