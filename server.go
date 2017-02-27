@@ -1,14 +1,26 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/micrypt/go-plivo/plivo"
 	"io/ioutil"
 	"os"
-	"strings"
 )
+
+type Response struct {
+	RecordingStartMs    string `json:"recording_start_ms"`
+	RecordingEndMs      string `json:"recording_end_ms"`
+	CallUUID            string `json:"call_uuid"`
+	APIID               string `json:"api_id"`
+	RecordURL           string `json:"record_url"`
+	RecordingDurationMs string `json:"recording_duration_ms"`
+	RecordingID         string `json:"recording_id"`
+	Message             string `json:"message"`
+	RecordingDuration   string `json:"recording_duration"`
+}
 
 const (
 	// Port at which the server starts listening
@@ -48,36 +60,15 @@ func main() {
 	r.Run(port)
 }
 
-// func upload(c *gin.Context) {
-// 	// fmt.Println(c.Request.MultipartForm)
-// 	file, header, err := c.Request.FormFile("file")
-// 	// fmt.Println("file", file)
-// 	// fmt.Println("header", header)
-// 	// fmt.Println("err", err)
-// 	filename := header.Filename
-// 	fmt.Println("yoooo", header.Filename)
-// 	out, err := os.Create("./" + filename + ".png")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer out.Close()
-// 	_, err = io.Copy(out, file)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
 func Get(c *gin.Context) {
 	file, err := os.Open("./plivo.xml")
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		panic(err)
 	}
 	defer file.Close()
 	data, err := ioutil.ReadAll(file)
-	// fmt.Println("data", data)
 	if err != nil {
-		fmt.Printf("error: %v", err)
-		return
+		panic(err)
 	}
 
 	c.Data(200, "text/xml", data)
@@ -86,21 +77,27 @@ func Get(c *gin.Context) {
 func Create(c *gin.Context) {
 	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
 	req := &plivo.CallMakeParams{From: os.Getenv("PHONE_FROM"), To: os.Getenv("PHONE_TO"), AnswerURL: os.Getenv("ANSWER_URL"), AnswerMethod: "GET"}
-	_, _ = client.Call.Make(req)
+	_, err := client.Call.Make(req)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Record(c *gin.Context) {
 	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
 	req := &plivo.CallRecordParams{TimeLimit: 60, FileFormat: "mp3", CallbackURL: os.Getenv("CALLBACK_URL"), CallbackMethod: "GET"}
-	_, _ = client.Call.Record(c.Query("CallUUID"), req)
+	_, err := client.Call.Record(c.Query("CallUUID"), req)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Callback(c *gin.Context) {
-	str := strings.Split(strings.Split(c.Query("response"), "record_url%22%3A%22")[1], "%22%2C%22recording_duration")[0]
-	str = strings.Replace(str, "%3A", ":", -1)
-	str = strings.Replace(str, "%5C%2F", "/", -1)
-	//Sometimes just use this instead of above three lines
-	// str := strings.Split(strings.Split(c.Query("response"), "record_url\":\"")[1], "\",\"recording_duration")[0]
-	// str = strings.Replace(str, "\\", "", -1)
-	fmt.Println("record_url", str)
+	response := &Response{}
+	err := json.Unmarshal([]byte(c.Query("response")), response)
+	if err == nil {
+		fmt.Println("response", response.RecordURL)
+	} else {
+		panic(err)
+	}
 }
