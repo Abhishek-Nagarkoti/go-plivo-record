@@ -1,6 +1,0 @@
-<Response>
-    <GetDigits redirect="false" retries="1" method="GET" numDigits="1" action="http://localhost:8080/record" timeout="7">
-        <Speak>Press 1 to record a message.</Speak>
-    </GetDigits>
-    <Wait length="10"/>
-</Response>

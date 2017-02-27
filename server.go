@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/micrypt/go-plivo/plivo"
-	"io/ioutil"
 	"os"
 )
 
@@ -61,17 +61,33 @@ func main() {
 }
 
 func Get(c *gin.Context) {
-	file, err := os.Open("./plivo.xml")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
+	type GetDigits struct {
+		Redirect  string `xml:"redirect,attr"`
+		Retries   string `xml:"retries,attr"`
+		Method    string `xml:"method,attr"`
+		NumDigits string `xml:"numDigits,attr"`
+		Action    string `xml:"action,attr"`
+		Timeout   string `xml:"timeout,attr"`
+		Speak     string `xml:"Speak"`
 	}
 
-	c.Data(200, "text/xml", data)
+	type Wait struct {
+		Length string `xml:"length,attr"`
+	}
+
+	type Response struct {
+		XMLName   xml.Name `xml:"Response"`
+		GetDigits GetDigits
+		Wait      Wait
+	}
+
+	action := "http://url_where_to_redirect_when_recording_starts"
+
+	response := &Response{}
+	response.GetDigits = GetDigits{Redirect: "false", Retries: "1", Method: "GET", NumDigits: "1", Action: action, Timeout: "7", Speak: "Press 1 to record a message."}
+	response.Wait = Wait{Length: "10"}
+
+	c.XML(200, response)
 }
 
 func Create(c *gin.Context) {
