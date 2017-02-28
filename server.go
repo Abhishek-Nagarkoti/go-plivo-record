@@ -10,18 +10,6 @@ import (
 	"os"
 )
 
-type Response struct {
-	RecordingStartMs    string `json:"recording_start_ms"`
-	RecordingEndMs      string `json:"recording_end_ms"`
-	CallUUID            string `json:"call_uuid"`
-	APIID               string `json:"api_id"`
-	RecordURL           string `json:"record_url"`
-	RecordingDurationMs string `json:"recording_duration_ms"`
-	RecordingID         string `json:"recording_id"`
-	Message             string `json:"message"`
-	RecordingDuration   string `json:"recording_duration"`
-}
-
 const (
 	// Port at which the server starts listening
 	Port = ":8080"
@@ -109,6 +97,18 @@ func Record(c *gin.Context) {
 }
 
 func Callback(c *gin.Context) {
+
+	type Response struct {
+		RecordingStartMs    string `json:"recording_start_ms"`
+		RecordingEndMs      string `json:"recording_end_ms"`
+		CallUUID            string `json:"call_uuid"`
+		APIID               string `json:"api_id"`
+		RecordURL           string `json:"record_url"`
+		RecordingDurationMs string `json:"recording_duration_ms"`
+		RecordingID         string `json:"recording_id"`
+		Message             string `json:"message"`
+		RecordingDuration   string `json:"recording_duration"`
+	}
 	response := &Response{}
 	err := json.Unmarshal([]byte(c.Query("response")), response)
 	if err == nil {
