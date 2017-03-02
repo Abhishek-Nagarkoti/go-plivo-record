@@ -98,10 +98,6 @@ func Record(c *gin.Context) {
 }
 
 func Callback(c *gin.Context) {
-<<<<<<< HEAD
-=======
-
->>>>>>> ff9469d0a342a43bb7dd3b9b0efeba19de442ded
 	type Response struct {
 		RecordingStartMs    string `json:"recording_start_ms"`
 		RecordingEndMs      string `json:"recording_end_ms"`
