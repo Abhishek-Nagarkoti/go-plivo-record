@@ -10,18 +10,6 @@ import (
 	"os"
 )
 
-type Response struct {
-	RecordingStartMs    string `json:"recording_start_ms"`
-	RecordingEndMs      string `json:"recording_end_ms"`
-	CallUUID            string `json:"call_uuid"`
-	APIID               string `json:"api_id"`
-	RecordURL           string `json:"record_url"`
-	RecordingDurationMs string `json:"recording_duration_ms"`
-	RecordingID         string `json:"recording_id"`
-	Message             string `json:"message"`
-	RecordingDuration   string `json:"recording_duration"`
-}
-
 const (
 	// Port at which the server starts listening
 	Port = ":8080"
@@ -51,6 +39,7 @@ func main() {
 	r.GET("/record", Record)
 	r.GET("/plivo/callback", Callback)
 	r.POST("/", Create)
+	r.GET("/hangup", Hangup)
 
 	// Start listening
 	port := Port
@@ -92,7 +81,7 @@ func Get(c *gin.Context) {
 
 func Create(c *gin.Context) {
 	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
-	req := &plivo.CallMakeParams{From: os.Getenv("PHONE_FROM"), To: os.Getenv("PHONE_TO"), AnswerURL: os.Getenv("ANSWER_URL"), AnswerMethod: "GET"}
+	req := &plivo.CallMakeParams{From: os.Getenv("PHONE_FROM"), To: os.Getenv("PHONE_TO"), AnswerURL: os.Getenv("ANSWER_URL"), AnswerMethod: "GET", HangupURL: os.Getenv("HANGUP_URL"), HangupMethod: "GET", TimeLimit: 60, RingTimeout: 60}
 	_, err := client.Call.Make(req)
 	if err != nil {
 		panic(err)
@@ -109,6 +98,17 @@ func Record(c *gin.Context) {
 }
 
 func Callback(c *gin.Context) {
+	type Response struct {
+		RecordingStartMs    string `json:"recording_start_ms"`
+		RecordingEndMs      string `json:"recording_end_ms"`
+		CallUUID            string `json:"call_uuid"`
+		APIID               string `json:"api_id"`
+		RecordURL           string `json:"record_url"`
+		RecordingDurationMs string `json:"recording_duration_ms"`
+		RecordingID         string `json:"recording_id"`
+		Message             string `json:"message"`
+		RecordingDuration   string `json:"recording_duration"`
+	}
 	response := &Response{}
 	err := json.Unmarshal([]byte(c.Query("response")), response)
 	if err == nil {
@@ -116,4 +116,20 @@ func Callback(c *gin.Context) {
 	} else {
 		panic(err)
 	}
+}
+
+func Hangup(c *gin.Context) {
+	fmt.Println("TotalCost", c.Query("TotalCost"))
+	fmt.Println("Direction", c.Query("Direction"))
+	fmt.Println("HangupCause", c.Query("HangupCause"))
+	fmt.Println("From", c.Query("From"))
+	fmt.Println("BillDuration", c.Query("BillDuration"))
+	fmt.Println("BillRate", c.Query("BillRate"))
+	fmt.Println("To", c.Query("To"))
+	fmt.Println("RequestUUID", c.Query("RequestUUID"))
+	fmt.Println("Duration", c.Query("Duration"))
+	fmt.Println("CallUUID", c.Query("CallUUID"))
+	fmt.Println("EndTime", c.Query("EndTime"))
+	fmt.Println("CallStatus", c.Query("CallStatus"))
+	fmt.Println("Event", c.Query("Event"))
 }
