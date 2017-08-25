@@ -36,6 +36,7 @@ func main() {
 	})
 	// r.POST("/", upload)
 	r.GET("/", Get)
+	r.GET("/play", Play)
 	r.GET("/record", Record)
 	r.GET("/plivo/callback", Callback)
 	r.POST("/", Create)
@@ -74,6 +75,36 @@ func Get(c *gin.Context) {
 
 	response := &Response{}
 	response.GetDigits = GetDigits{Redirect: "false", Retries: "1", Method: "GET", NumDigits: "1", Action: action, Timeout: "7", Speak: "Press 1 to record a message."}
+	response.Wait = Wait{Length: "10"}
+
+	c.XML(200, response)
+}
+
+func Play(c *gin.Context) {
+	type GetDigits struct {
+		Redirect  string `xml:"redirect,attr"`
+		Retries   string `xml:"retries,attr"`
+		Method    string `xml:"method,attr"`
+		NumDigits string `xml:"numDigits,attr"`
+		Action    string `xml:"action,attr"`
+		Timeout   string `xml:"timeout,attr"`
+		Speak     string `xml:"Speak"`
+	}
+
+	type Wait struct {
+		Length string `xml:"length,attr"`
+	}
+
+	type Response struct {
+		XMLName   xml.Name `xml:"Response"`
+		GetDigits GetDigits
+		Wait      Wait
+	}
+
+	action := "http://url_where_to_redirect_where_mp3_plays"
+
+	response := &Response{}
+	response.GetDigits = GetDigits{Redirect: "false", Retries: "1", Method: "GET", NumDigits: "1", Action: action, Timeout: "7", Speak: "Press 1 to hear your message."}
 	response.Wait = Wait{Length: "10"}
 
 	c.XML(200, response)
