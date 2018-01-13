@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"encoding/xml"
+	// "encoding/xml"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/micrypt/go-plivo/plivo"
+	"github.com/plivo/plivo-go/plivo"
+	"github.com/plivo/plivo-go/plivo/xml"
 	"os"
 )
 
@@ -50,51 +51,48 @@ func main() {
 }
 
 func Get(c *gin.Context) {
-	type GetDigits struct {
-		Redirect  string `xml:"redirect,attr"`
-		Retries   string `xml:"retries,attr"`
-		Method    string `xml:"method,attr"`
-		NumDigits string `xml:"numDigits,attr"`
-		Action    string `xml:"action,attr"`
-		Timeout   string `xml:"timeout,attr"`
-		Speak     string `xml:"Speak"`
-	}
-
-	type Wait struct {
-		Length string `xml:"length,attr"`
-	}
-
-	type Response struct {
-		XMLName   xml.Name `xml:"Response"`
-		GetDigits GetDigits
-		Wait      Wait
-	}
 
 	action := "http://url_where_to_redirect_when_recording_starts"
-
-	response := &Response{}
-	response.GetDigits = GetDigits{Redirect: "false", Retries: "1", Method: "GET", NumDigits: "1", Action: action, Timeout: "7", Speak: "Press 1 to record a message."}
-	response.Wait = Wait{Length: "10"}
-
+	response := xml.ResponseElement{
+		Contents: []interface{}{
+			new(xml.GetDigitsElement).SetAction(action).SetMethod("GET").SetRedirect(false).SetRetries(1).SetNumDigits(1).SetValidDigits("1").SetTimeout(15).SetContents([]interface{}{
+				new(xml.SpeakElement).SetContents("Press 1 to record a message."),
+			}),
+			new(xml.WaitElement).SetLength(10),
+		},
+	}
 	c.XML(200, response)
 }
 
 func Create(c *gin.Context) {
-	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
-	req := &plivo.CallMakeParams{From: os.Getenv("PHONE_FROM"), To: os.Getenv("PHONE_TO"), AnswerURL: os.Getenv("ANSWER_URL"), AnswerMethod: "GET", HangupURL: os.Getenv("HANGUP_URL"), HangupMethod: "GET", TimeLimit: 60, RingTimeout: 60}
-	_, err := client.Call.Make(req)
+	client, err := plivo.NewClient(os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"), &plivo.ClientOptions{})
 	if err != nil {
 		panic(err)
 	}
+	client.Calls.Create(plivo.CallCreateParams{
+		From:             os.Getenv("PHONE_FROM"),
+		To:               os.Getenv("PHONE_TO"),
+		AnswerURL:        os.Getenv("ANSWER_URL"),
+		AnswerMethod:     "GET",
+		HangupURL:        os.Getenv("HANGUP_URL"),
+		HangupMethod:     "GET",
+		TimeLimit:        60,
+		RingTimeout:      60,
+		MachineDetection: "hangup",
+	})
 }
 
 func Record(c *gin.Context) {
-	client := plivo.NewClient(nil, os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"))
-	req := &plivo.CallRecordParams{TimeLimit: 60, FileFormat: "mp3", CallbackURL: os.Getenv("CALLBACK_URL"), CallbackMethod: "GET"}
-	_, err := client.Call.Record(c.Query("CallUUID"), req)
+	client, err := plivo.NewClient(os.Getenv("PLIVO_AUTH_ID"), os.Getenv("PLIVO_AUTH_TOKEN"), &plivo.ClientOptions{})
 	if err != nil {
 		panic(err)
 	}
+	client.Calls.Record(c.Query("CallUUID"), plivo.CallRecordParams{
+		FileFormat:     "mp3",
+		CallbackURL:    os.Getenv("CALLBACK_URL"),
+		CallbackMethod: "GET",
+		TimeLimit:      60,
+	})
 }
 
 func Callback(c *gin.Context) {
